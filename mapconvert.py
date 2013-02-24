@@ -76,6 +76,7 @@ for k in form.keys():
 
 
 # bring the data into the database
+saved_to = []
 if all(k in data for k in ['hostname', 'longitude','latitude']):
     data['_id'] = data['hostname']
 
@@ -92,9 +93,15 @@ if all(k in data for k in ['hostname', 'longitude','latitude']):
         data['type'] = 'node'
         data['lastupdate'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
 
-        db.save(data)
+        if db.save(data):
+          saved_to.append("%s/%s" % (server, database))
+
 
 # log and print them
-s = json.dumps(data, indent = 4)
-logging.debug("REQUEST: %s\n%s" % (os.environ['QUERY_STRING'],s))
-print(s)
+msg = '\n'.join([
+    "REQUEST: " + os.environ['QUERY_STRING'],
+    "SAVED IN: " + (','.join(saved_to) or '-'),
+    "DATA: " + json.dumps(data, indent = 4)
+])
+logging.debug(msg)
+print(msg)
