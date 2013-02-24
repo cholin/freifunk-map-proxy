@@ -4,6 +4,7 @@
 import cgi
 import json
 import logging
+import logging.handlers
 import urllib2
 import cgitb
 import couchdb
@@ -17,7 +18,7 @@ from datetime import datetime
 
 # globals
 SERVERS = [('openwifimap.net','openwifimap')]
-LOG_FILE = 'logs.txt'
+LOG_FILE = os.path.join('logs', 'mapconvert.log')
 
 # helper methods
 _punct_re = re.compile(r'[\t !"#$%&\'()*\/<=>?@\[\\\]^`{|},]+')
@@ -33,7 +34,11 @@ def slugify(text, delim=u'-'):
 cgitb.enable()
 
 # logger
-logging.basicConfig(filename=LOG_FILE, format='\n%(asctime)s\n%(message)s\n', level=logging.DEBUG)
+logging.basicConfig(format='\n%(asctime)s\n%(message)s\n')
+logger = logging.getLogger('mapconvert')
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.handlers.RotatingFileHandler(LOG_FILE,
+                    maxBytes=1024, backupCount=3))
 
 # HTTP-HEADER
 print('Content-Type: text/plain;charset=utf-8\n')
@@ -101,7 +106,7 @@ if all(k in data for k in ['hostname', 'longitude','latitude']):
 msg = '\n'.join([
     "REQUEST: " + os.environ['QUERY_STRING'],
     "SAVED IN: " + (','.join(saved_to) or '-'),
-    "DATA: " + json.dumps(data, indent = 4)
+    "DATA: " + json.dumps(data, indent = 4),
+    ""
 ])
-logging.debug(msg)
-print(msg)
+logger.debug(msg)
