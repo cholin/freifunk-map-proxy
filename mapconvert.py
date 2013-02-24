@@ -10,8 +10,10 @@ import couchdb
 import re
 import os
 
+from StringIO import StringIO
+from lxml import etree
+from lxml.cssselect import CSSSelector
 from datetime import datetime
-#from bs4 import BeautifulSoup
 
 # globals
 SERVERS = [('openwifimap.net','openwifimap')]
@@ -40,9 +42,6 @@ print('Content-Type: text/plain;charset=utf-8\n')
 form = cgi.FieldStorage()
 data = {
    'script' : 'freifunk-map-proxy',
-   'type': 'node',
-   'lastupdate' : datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
-   'interfaces' : [],
 }
 
 for k in form.keys():
@@ -50,14 +49,15 @@ for k in form.keys():
 
     if k == "note":
         note = urllib2.unquote(form[k].value)
-        if 'href' in note:
+        if all(s in note for s in ['<a','</a>', '<p>']):
             # we would need beautiful soup but on vm-userpages
-            # we only have python2.6.... :/
-            #
-            # b = BeautifulSoup(note)
-            # data['hostname'] = b.find('a').text
-            # data['freifunk'] = { 'contact' : {'note' : b.find('p').text } }
-            data['freifunk'] = { 'contact' : {'note' : cgi.escape(note)} }
+            # we only have python2.6.... so let's use lxml :/
+            parser = etree.HTMLParser()
+            tree = etree.parse(StringIO(note), parser)
+            sel_a = CSSSelector('a')
+            sel_p = CSSSelector('p')
+            data['hostname'] = sel_a(tree)[0].text
+            data['freifunk'] = { 'contact' : {'note' : sel_p(tree)[0].text} }
         else:
             data['hostname'] = slugify(unicode(escaped, errors='ignore'))[:20]
 
@@ -67,7 +67,10 @@ for k in form.keys():
             data['latitude']  = float(lat_long[0])
             data['longitude'] = float(lat_long[1])
         elif k == "olsrip":
-            data['interfaces'].append({ 'ipv4Addresses' : escaped })
+            try:
+                data['interfaces'].append({ 'ipv4Addresses' : escaped })
+            except:
+                data['interfaces'] = [{ 'ipv4Addresses' : escaped }]
         else:
             data[k] = escaped
 
@@ -82,9 +85,16 @@ if all(k in data for k in ['hostname', 'longitude','latitude']):
         entry = db.get(data['_id'])
         if entry != None:
             data['_rev'] = entry['_rev']
+
+            if entry['script'] == data['script']:
+              continue
+
+        data['type'] = 'node'
+        data['lastupdate'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+
         db.save(data)
 
 # log and print them
 s = json.dumps(data, indent = 4)
-logging.debug("%s\n%s" % (os.environ['QUERY_STRING'],s))
+logging.debug("REQUEST: %s\n%s" % (os.environ['QUERY_STRING'],s))
 print(s)
