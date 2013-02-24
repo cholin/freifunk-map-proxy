@@ -9,6 +9,7 @@ import urllib2
 import cgitb
 import couchdb
 import re
+import sys
 import os
 
 from StringIO import StringIO
@@ -39,6 +40,7 @@ logger = logging.getLogger('mapconvert')
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.handlers.RotatingFileHandler(LOG_FILE,
                     maxBytes=1024, backupCount=3))
+logger.addHandler(logging.StreamHandler(sys.stdout))
 
 # HTTP-HEADER
 print('Content-Type: text/plain;charset=utf-8\n')
