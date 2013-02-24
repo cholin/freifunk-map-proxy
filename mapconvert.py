@@ -6,15 +6,20 @@ import json
 import logging
 import urllib2
 import cgitb
+import couchdb
 
 from datetime import datetime
 #from bs4 import BeautifulSoup
+
+# globals
+SERVERS = [('openwifimap.net','openwifimap')]
+LOG_FILE = 'logs.txt'
 
 # enable debugging
 cgitb.enable()
 
 # logger
-logging.basicConfig(filename='logs.txt', format='\n%(asctime)s\n%(message)s\n', level=logging.DEBUG)
+logging.basicConfig(filename=LOG_FILE, format='\n%(asctime)s\n%(message)s\n', level=logging.DEBUG)
 
 # HTTP-HEADER
 print('Content-Type: text/plain;charset=utf-8\n')
@@ -28,7 +33,7 @@ data = {
 }
 
 for k in form.keys():
-	escaped = cgi.escape(form[k].value)
+  escaped = cgi.escape(form[k].value)
 
   if k == "note":
     note = urllib2.unquote(form[k].value)
@@ -52,6 +57,16 @@ for k in form.keys():
       data['interfaces'].append({ 'ipv4Addresses' : escaped })
     else:
       data[k] = escaped
+
+
+# bring the data into the database
+if 'hostname' in data:
+  data['_id'] = data['hostname']
+
+  for server, database in SERVERS:
+    couch = couchdb.Server('http://%s' % server)
+    db = couch[database]
+    db.save(data)
 
 # log and print them
 s = json.dumps(data, indent = 4)
