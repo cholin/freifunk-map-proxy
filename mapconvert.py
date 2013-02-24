@@ -51,8 +51,8 @@ for k in form.keys():
   else:
     if k == "update":
       lat_long = escaped.split(',')
-      data['latitude']  = lat_long[0]
-      data['longitude'] = lat_long[0]
+      data['latitude']  = float(lat_long[0])
+      data['longitude'] = float(lat_long[1])
     elif k == "olsrip":
       data['interfaces'].append({ 'ipv4Addresses' : escaped })
     else:
@@ -60,12 +60,15 @@ for k in form.keys():
 
 
 # bring the data into the database
-if 'hostname' in data:
+if all(k in data for k in ['hostname', 'longitude','latitude']):
   data['_id'] = data['hostname']
 
   for server, database in SERVERS:
     couch = couchdb.Server('http://%s' % server)
     db = couch[database]
+    entry = db.get(data['_id'])
+    if entry != None:
+      data['_rev'] = entry['_rev']
     db.save(data)
 
 # log and print them
