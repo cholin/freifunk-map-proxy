@@ -85,5 +85,5 @@ if all(k in data for k in ['hostname', 'longitude','latitude']):
 
 # log and print them
 s = json.dumps(data, indent = 4)
-logging.debug("%s\n%s" % (os.environment('QUERY_STRING'),s))
+logging.debug("%s\n%s" % (os.environ['QUERY_STRING'],s))
 print(s)
