@@ -39,7 +39,7 @@ logging.basicConfig(format='\n%(asctime)s\n%(message)s\n')
 logger = logging.getLogger('mapconvert')
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.handlers.RotatingFileHandler(LOG_FILE,
-                    maxBytes=1024, backupCount=3))
+                    maxBytes=100*1024, backupCount=3))
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
 # HTTP-HEADER
