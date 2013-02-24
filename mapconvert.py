@@ -87,7 +87,7 @@ if all(k in data for k in ['hostname', 'longitude','latitude']):
         if entry != None:
             data['_rev'] = entry['_rev']
 
-            if entry['script'] == data['script']:
+            if entry['script'] != data['script']:
               continue
 
         data['type'] = 'node'
