@@ -10,7 +10,6 @@ import couchdb
 import re
 import os
 
-from unicodedata import normalize
 from datetime import datetime
 #from bs4 import BeautifulSoup
 
@@ -24,10 +23,9 @@ def slugify(text, delim=u'-'):
    """Generates an slightly worse ASCII-only slug."""
    result = []
    for word in _punct_re.split(text.lower()):
-       word = normalize('NFKD', word).encode('ascii', 'ignore')
        if word:
            result.append(word)
-   return unicode(delim.join(result))
+   return delim.join(result)
 
 # enable debugging
 cgitb.enable()
@@ -60,7 +58,7 @@ for k in form.keys():
             # data['freifunk'] = { 'contact' : {'note' : b.find('p').text } }
             data['freifunk'] = { 'contact' : {'note' : cgi.escape(note)} }
         else:
-            data['hostname'] = slugify(escaped)[:20]
+            data['hostname'] = slugify(unicode(escaped, errors='ignore'))[:20]
 
     else:
         if k == "update":
