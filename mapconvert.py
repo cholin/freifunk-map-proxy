@@ -39,6 +39,7 @@ print('Content-Type: text/plain;charset=utf-8\n')
 # parse parameters
 form = cgi.FieldStorage()
 data = {
+   'script' : 'freifunk-map-proxy',
    'type': 'node',
    'lastupdate' : datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
    'interfaces' : [],
