@@ -18,11 +18,11 @@ SERVERS = [('openwifimap.net','openwifimap')]
 LOG_FILE = 'logs.txt'
 
 # helper methods
-_punct_re = re.compile(r'[\t !"#$%&\'()*\-/<=>?@\[\\\]^_`{|},.]+')
+_punct_re = re.compile(r'[\t !"#$%&\'()*\/<=>?@\[\\\]^`{|},]+')
 def slugify(text, delim=u'-'):
    """Generates an slightly worse ASCII-only slug."""
    result = []
-   for word in _punct_re.split(text.lower()):
+   for word in _punct_re.split(text):
        if word:
            result.append(word)
    return delim.join(result)
