@@ -8,9 +8,9 @@ import logging.handlers
 import urllib2
 import cgitb
 import couchdb
-import re
 import sys
 import os
+import hashlib
 
 from StringIO import StringIO
 from lxml import etree
@@ -20,16 +20,6 @@ from datetime import datetime
 # globals
 SERVERS = [('openwifimap.net','openwifimap')]
 LOG_FILE = os.path.join('logs', 'mapconvert.log')
-
-# helper methods
-_punct_re = re.compile(r'[\t !"#$%&\'()*\/<=>?@\[\\\]^`{|},]+')
-def slugify(text, delim=u'-'):
-   """Generates an slightly worse ASCII-only slug."""
-   result = []
-   for word in _punct_re.split(text):
-       if word:
-           result.append(word)
-   return delim.join(result)
 
 # enable debugging
 cgitb.enable()
@@ -65,21 +55,28 @@ for k in form.keys():
             sel_p = CSSSelector('p')
             data['hostname'] = sel_a(tree)[0].text
             data['freifunk'] = { 'contact' : {'note' : sel_p(tree)[0].text} }
+        elif len(escaped) <= 32:
+            data['hostname'] = escaped
         else:
-            data['hostname'] = slugify(unicode(escaped, errors='ignore'))[:20]
+            data['hostname'] = hashlib.sha1(escaped).hexdigest()[:32]
+            data['freifunk'] = { 'contact' : {'note' : escaped } }
+
+    elif k == "update":
+        lat_long = escaped.split(',')
+        data['latitude']  = float(lat_long[0])
+        data['longitude'] = float(lat_long[1])
+
+    elif k == "olsrip":
+        try:
+            data['interfaces'].append({ 'ipv4Addresses' : escaped })
+        except:
+            data['interfaces'] = [{ 'ipv4Addresses' : escaped }]
+
+    elif k == 'updateiv':
+        data['updateInterval'] = escaped
 
     else:
-        if k == "update":
-            lat_long = escaped.split(',')
-            data['latitude']  = float(lat_long[0])
-            data['longitude'] = float(lat_long[1])
-        elif k == "olsrip":
-            try:
-                data['interfaces'].append({ 'ipv4Addresses' : escaped })
-            except:
-                data['interfaces'] = [{ 'ipv4Addresses' : escaped }]
-        else:
-            data[k] = escaped
+        data[k] = escaped
 
 
 # bring the data into the database
