@@ -66,14 +66,14 @@ for k in form.keys():
         data['latitude']  = float(lat_long[0])
         data['longitude'] = float(lat_long[1])
 
-    elif k == "olsrip":
+    elif any (k == x for x in ["olsrip", "batmanip"]):
         try:
             data['interfaces'].append({ 'ipv4Addresses' : escaped })
         except:
             data['interfaces'] = [{ 'ipv4Addresses' : escaped }]
 
     elif k == 'updateiv':
-        data['updateInterval'] = escaped
+        data['updateInterval'] = int(escaped)
 
     else:
         data[k] = escaped
