@@ -62,7 +62,7 @@ for k in form.keys():
             data['hostname'] = hashlib.sha1(escaped).hexdigest()[:32]
             data['freifunk'] = { 'contact' : {'note' : escaped } }
 
-    elif all(k == x for x in ["update", ","]):
+    elif k == "update" and "," in escaped:
         lat_long = escaped.split(',')
         data['latitude']  = float(lat_long[0])
         data['longitude'] = float(lat_long[1])
