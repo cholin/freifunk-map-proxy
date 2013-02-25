@@ -42,10 +42,11 @@ data = {
 }
 
 for k in form.keys():
-    escaped = cgi.escape(form[k].value)
+    value = form[k].value.decode('utf-8', 'ignore')
+    escaped = cgi.escape(value)
 
     if k == "note":
-        note = urllib2.unquote(form[k].value)
+        note = urllib2.unquote(value)
         if all(s in note for s in ['<a','</a>', '<p>']):
             # we would need beautiful soup but on vm-userpages
             # we only have python2.6.... so let's use lxml :/
@@ -61,7 +62,7 @@ for k in form.keys():
             data['hostname'] = hashlib.sha1(escaped).hexdigest()[:32]
             data['freifunk'] = { 'contact' : {'note' : escaped } }
 
-    elif k == "update":
+    elif all(k == x for x in ["update", ","]):
         lat_long = escaped.split(',')
         data['latitude']  = float(lat_long[0])
         data['longitude'] = float(lat_long[1])
