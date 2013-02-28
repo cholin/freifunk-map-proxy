@@ -10,7 +10,6 @@ import cgitb
 import couchdb
 import sys
 import os
-import hashlib
 
 from StringIO import StringIO
 from lxml import etree
@@ -47,6 +46,7 @@ for k in form.keys():
 
     if k == "note":
         note = urllib2.unquote(value)
+        # official freifunk-mapupdate script
         if all(s in note for s in ['<a','</a>', '<p>']):
             # we would need beautiful soup but on vm-userpages
             # we only have python2.6.... so let's use lxml :/
@@ -56,10 +56,13 @@ for k in form.keys():
             sel_p = CSSSelector('p')
             data['hostname'] = sel_a(tree)[0].text
             data['freifunk'] = { 'contact' : {'note' : sel_p(tree)[0].text} }
+
+        # old mapupdate scripts with only hostname in 'note'
         elif len(escaped) <= 32:
             data['hostname'] = escaped
+
+        # all other horrible requests...
         else:
-            data['hostname'] = hashlib.sha1(escaped).hexdigest()[:32]
             data['freifunk'] = { 'contact' : {'note' : escaped } }
 
     elif k == "update" and "," in escaped:
@@ -79,6 +82,12 @@ for k in form.keys():
     else:
         data[k] = escaped
 
+# if we did not get a hostname we try to use ipv4-Address instead
+if 'hostname' not in data:
+    try:
+        data['hostname'] = data['interfaces'][0]['ipv4Addresses']
+    except:
+        pass
 
 # bring the data into the database
 saved_to = []
@@ -93,13 +102,13 @@ if all(k in data for k in ['hostname', 'longitude','latitude']):
             data['_rev'] = entry['_rev']
 
             if entry['script'] != data['script']:
-              continue
+                continue
 
         data['type'] = 'node'
         data['lastupdate'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
 
         if db.save(data):
-          saved_to.append("%s/%s" % (server, database))
+            saved_to.append("%s/%s" % (server, database))
 
 
 # log and print them
