@@ -17,6 +17,7 @@ from lxml.cssselect import CSSSelector
 from datetime import datetime
 
 # globals
+MAP_URL = 'http://openwifimap.net/map.html'
 SERVERS = [('openwifimap.net','openwifimap')]
 LOG_FILE = os.path.join('logs', 'mapconvert.log')
 
@@ -30,9 +31,6 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.handlers.RotatingFileHandler(LOG_FILE,
                     maxBytes=100*1024, backupCount=3))
 logger.addHandler(logging.StreamHandler(sys.stdout))
-
-# HTTP-HEADER
-print('Content-Type: text/plain;charset=utf-8\n')
 
 # parse parameters
 form = cgi.FieldStorage()
@@ -110,12 +108,17 @@ if all(k in data for k in ['hostname', 'longitude','latitude']):
         if db.save(data):
             saved_to.append("%s/%s" % (server, database))
 
+if len(saved_to) > 0:
+    print('Content-Type: text/plain;charset=utf-8\n')
 
-# log and print them
-msg = '\n'.join([
-    "REQUEST: " + os.environ['QUERY_STRING'],
-    "SAVED IN: " + (','.join(saved_to) or '-'),
-    "DATA: " + json.dumps(data, indent = 4),
-    ""
-])
-logger.debug(msg)
+    # log and print them
+    msg = '\n'.join([
+        "REQUEST: " + os.environ['QUERY_STRING'],
+        "SAVED IN: " + (','.join(saved_to) or '-'),
+        "DATA: " + json.dumps(data, indent = 4),
+        ""
+    ])
+    logger.debug(msg)
+
+else:
+    print('Location: %s\n' % MAP_URL)
