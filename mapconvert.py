@@ -7,7 +7,6 @@ import logging
 import logging.handlers
 import urllib2
 import cgitb
-import couchdb
 import sys
 import os
 
@@ -18,7 +17,7 @@ from datetime import datetime
 
 # globals
 MAP_URL = 'http://openwifimap.net/map.html'
-SERVERS = [('openwifimap.net','openwifimap')]
+API_URLS = ['http://api.openwifimap.net/']
 LOG_FILE = os.path.join('logs', 'mapconvert.log')
 
 # enable debugging
@@ -89,24 +88,22 @@ if 'hostname' not in data:
 
 # bring the data into the database
 saved_to = []
-if all(k in data for k in ['hostname', 'longitude','latitude']):
-    data['_id'] = data['hostname']
+if all(k in data for k in ['hostname', 'longitude', 'latitude']):
+    data['type'] = 'node'
+    data['updateInterval'] = 86400 # one day
 
-    for server, database in SERVERS:
-        couch = couchdb.Server('http://%s' % server)
-        db = couch[database]
-        entry = db.get(data['_id'])
-        if entry != None:
-            data['_rev'] = entry['_rev']
+    for api_url in API_URLS:
 
-            if entry['script'] != data['script']:
+        # only update if present doc was also sent by freifunk-map-proxy
+        oldreq = urllib2.urlopen(api_url+'/db/'+data['hostname'])
+        if oldreq.getcode()==200:
+            olddata = json.loads(oldreq.read())
+            if olddata['script'] != data['script']:
                 continue
 
-        data['type'] = 'node'
-        data['lastupdate'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
-
-        if db.save(data):
-            saved_to.append("%s/%s" % (server, database))
+        req = urllib2.urlopen(api_url+'/update_node/'+data['hostname'], json.dumps(data))
+        if req.getcode()==201:
+            saved_to.append(api_url)
 
 if len(saved_to) > 0:
     print('Content-Type: text/plain;charset=utf-8\n')
