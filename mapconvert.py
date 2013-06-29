@@ -95,11 +95,14 @@ if all(k in data for k in ['hostname', 'longitude', 'latitude']):
     for api_url in API_URLS:
 
         # only update if present doc was also sent by freifunk-map-proxy
-        oldreq = urllib2.urlopen(api_url+'/db/'+data['hostname'])
-        if oldreq.getcode()==200:
-            olddata = json.loads(oldreq.read())
-            if olddata['script'] != data['script']:
-                continue
+        try:
+            oldreq = urllib2.urlopen(api_url+'/db/'+data['hostname'])
+            if oldreq.getcode()==200:
+                olddata = json.loads(oldreq.read())
+                if olddata['script'] != data['script']:
+                    continue
+        except urllib2.HTTPError:
+            pass
 
         req = urllib2.urlopen(api_url+'/update_node/'+data['hostname'], json.dumps(data))
         if req.getcode()==201:
