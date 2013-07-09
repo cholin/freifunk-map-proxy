@@ -7,13 +7,12 @@ import logging
 import logging.handlers
 import urllib2
 import cgitb
-import sys
+#import sys
 import os
 
 from StringIO import StringIO
 from lxml import etree
 from lxml.cssselect import CSSSelector
-from datetime import datetime
 
 # globals
 MAP_URL = 'http://openwifimap.net/map.html'
@@ -29,7 +28,7 @@ logger = logging.getLogger('mapconvert')
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.handlers.RotatingFileHandler(LOG_FILE,
                     maxBytes=100*1024, backupCount=3))
-logger.addHandler(logging.StreamHandler(sys.stdout))
+#logger.addHandler(logging.StreamHandler(sys.stdout))
 
 # parse parameters
 form = cgi.FieldStorage()
@@ -96,7 +95,8 @@ if all(k in data for k in ['hostname', 'longitude', 'latitude']):
 
         # only update if present doc was also sent by freifunk-map-proxy
         try:
-            oldreq = urllib2.urlopen(api_url+'/db/'+data['hostname'])
+            url = '%s/db/%s' % (api_url, data['hostname'])
+            oldreq = urllib2.urlopen(url)
             if oldreq.getcode()==200:
                 olddata = json.loads(oldreq.read())
                 if olddata['script'] != data['script']:
@@ -104,12 +104,14 @@ if all(k in data for k in ['hostname', 'longitude', 'latitude']):
         except urllib2.HTTPError:
             pass
 
-        req = urllib2.urlopen(api_url+'/update_node/'+data['hostname'], json.dumps(data))
+        url = "%s/update_node/%s" % (api_url, data['hostname'])
+        req = urllib2.urlopen(url, json.dumps(data))
         if req.getcode()==201:
             saved_to.append(api_url)
 
 if len(saved_to) > 0:
     print('Content-Type: text/plain;charset=utf-8\n')
+    print('success update')
 
     # log and print them
     msg = '\n'.join([
